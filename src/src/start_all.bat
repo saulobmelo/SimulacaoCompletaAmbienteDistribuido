@@ -1,4 +1,5 @@
 @echo off
+call scripts\compile.bat
 
 echo Iniciando todos os nós...
 
