@@ -29,7 +29,8 @@ public class Main {
         if (grupo.equals("B")) {
             try {
                 LocateRegistry.createRegistry(1099);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
             RemoteNóImpl impl = new RemoteNóImpl(nodeId, relogio);
             java.rmi.Naming.rebind("//localhost/" + nodeId, impl);
             System.out.println("Nó RMI registrado: " + nodeId);
@@ -37,30 +38,35 @@ public class Main {
 
         System.out.println("Nó " + nodeId + " iniciado. grupo=" + grupo);
 
+        // espera 2 segundos para garantir que os servidores já subiram
+        Thread.sleep(2000);
+
         // Envia mensagens de teste automáticas para os pares
-        if (!peers.isEmpty()) {
-            Arrays.stream(peers.split(",")).forEach(p -> {
-                try {
-                    String[] parts = p.split(":");
-                    String peerId = parts[0];
-                    int peerPort = Integer.parseInt(parts[1]);
+        for (int i=0; i<3; i++) {
+            if (!peers.isEmpty()) {
+                Arrays.stream(peers.split(",")).forEach(p -> {
+                    try {
+                        String[] parts = p.split(":");
+                        String peerId = parts[0];
+                        int peerPort = Integer.parseInt(parts[1]);
 
-                    // incrementa relógio Lamport antes de enviar
-                    int ts = relogio.tick();
+                        // incrementa relógio Lamport antes de enviar
+                        int ts = relogio.tick();
 
-                    Message msg = new Message(nodeId, peerId,
-                            "Mensagem de teste automática de " + nodeId + " para " + peerId,
-                            ts);
+                        Message msg = new Message(nodeId, peerId,
+                                "Mensagem de teste automática de " + nodeId + " para " + peerId,
+                                ts);
 
-                    boolean ok = TcpClient.send("localhost", peerPort, msg);
-                    if (ok) {
-                        System.out.println("Mensagem enviada automaticamente de "
-                                + nodeId + " para " + peerId + " (lamport=" + ts + ")");
+                        boolean ok = TcpClient.send("localhost", peerPort, msg);
+                        if (ok) {
+                            System.out.println("Mensagem enviada automaticamente de "
+                                    + nodeId + " para " + peerId + " (lamport=" + ts + ")");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Falha ao enviar mensagem de teste: " + e.getMessage());
                     }
-                } catch (Exception e) {
-                    System.err.println("Falha ao enviar mensagem de teste: " + e.getMessage());
-                }
-            });
+                });
+            }
         }
     }
 }
