@@ -12,7 +12,7 @@ public class RemoteNodeImpl extends UnicastRemoteObject implements RemoteNode {
     private final String nodeId;
     private final LamportClock clock;
 
-    protected RemoteNodeImpl(String nodeId, LamportClock clock) throws RemoteException {
+    public RemoteNodeImpl(String nodeId, LamportClock clock) throws RemoteException {
         super();
         this.nodeId = nodeId; this.clock = clock;
     }
