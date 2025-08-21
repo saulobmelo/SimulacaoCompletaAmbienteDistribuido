@@ -2,34 +2,39 @@ package rmi;
 
 import common.LamportClock;
 import common.Message;
+import core.SnapshotManager;
 
-import java.rmi.server.UnicastRemoteObject;
 import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Map;
 
 public class RemoteNodeImpl extends UnicastRemoteObject implements RemoteNode {
     private final String nodeId;
     private final LamportClock clock;
+    private final SnapshotManager snapshot;
 
-    public RemoteNodeImpl(String nodeId, LamportClock clock) throws RemoteException {
+    public RemoteNodeImpl(String nodeId, LamportClock clock, SnapshotManager snapshot) throws RemoteException {
         super();
-        this.nodeId = nodeId; this.clock = clock;
+        this.nodeId = nodeId; this.clock = clock; this.snapshot = snapshot;
     }
 
     @Override
     public void receiveMessage(Message m) throws RemoteException {
-        clock.updateOnReceive(m.lamport);
-        System.out.println("RMI Received: " + m.toString());
+        // increase lamport on receive
+        // clock.receive(m.lamport);
+        System.out.println(nodeId + " RMI received: " + m);
     }
 
     @Override
-    public int getLamport() throws RemoteException { return clock.getTime(); }
+    public int getLamport() throws RemoteException {
+        return clock.getTime();
+    }
 
     @Override
     public void receiveMarker(String snapshotId, String fromNode) throws RemoteException {
-        System.out.println("Received MARKER " + snapshotId + " from " + fromNode);
-        // Snapshot logic implemented in SnapshotManager class
+        System.out.println(nodeId + " received MARKER " + snapshotId + " from " + fromNode);
+        snapshot.receiveMarker(snapshotId, fromNode);
     }
 
     @Override

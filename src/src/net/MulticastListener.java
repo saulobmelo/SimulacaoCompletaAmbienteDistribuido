@@ -1,32 +1,39 @@
 package net;
 
+import core.SnapshotManager;
+
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 
 public class MulticastListener implements Runnable {
     private final InetAddress group;
     private final int port;
+    private final SnapshotManager snapshot;
     private volatile boolean running = true;
 
-    public MulticastListener(String groupAddr, int port) throws Exception {
-        this.group = InetAddress.getByName(groupAddr); this.port = port;
+    public MulticastListener(String groupAddr, int port, SnapshotManager snapshot) throws Exception {
+        this.group = InetAddress.getByName(groupAddr); this.port = port; this.snapshot = snapshot;
     }
 
     public void stop() { running = false; }
 
     @Override
     public void run() {
-        try (MulticastSocket ms = new MulticastSocket(port)) {
-            ms.joinGroup(group);
-            byte[] buf = new byte[1024];
+        try (MulticastSocket socket = new MulticastSocket(port)) {
+            socket.joinGroup(group);
+            System.out.println("Multicast listening on " + group + ":" + port);
+            byte[] buf = new byte[512];
             while (running) {
-                DatagramPacket p = new DatagramPacket(buf, buf.length);
-                ms.receive(p);
-                String msg = new String(p.getData(), 0, p.getLength());
-                System.out.println("Multicast received: " + msg);
+                DatagramPacket packet = new DatagramPacket(buf, buf.length);
+                socket.receive(packet);
+                String msg = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8);
+                if (msg.startsWith("MARKER|SNAP|")) {
+                    String snapId = msg.substring("MARKER|SNAP|".length());
+                    snapshot.receiveMarker(snapId, packet.getAddress().toString());
+                }
             }
-            ms.leaveGroup(group);
         } catch (Exception e) {
-            System.err.println("MulticastListener error: " + e.getMessage());
+            if (running) System.err.println("MulticastListener error: " + e.getMessage());
         }
     }
 }

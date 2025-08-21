@@ -1,6 +1,7 @@
 package net;
 
 import common.Message;
+import common.AuthService;
 
 import java.io.*;
 import java.net.*;
@@ -15,10 +16,14 @@ public class TcpServer implements Runnable {
     @Override
     public void run() {
         try (ServerSocket server = new ServerSocket(port)) {
-            System.out.println("TCP Server listening on " + port);
+            System.out.println("TCP server listening on " + port);
             while (running) {
-                Socket s = server.accept();
-                new Thread(() -> handleClient(s)).start();
+                try {
+                    Socket s = server.accept();
+                    new Thread(() -> handleClient(s)).start();
+                } catch (IOException e) {
+                    if (running) System.err.println("accept error: " + e.getMessage());
+                }
             }
         } catch (IOException e) {
             System.err.println("TcpServer error: " + e.getMessage());
@@ -30,6 +35,12 @@ public class TcpServer implements Runnable {
             Object obj = in.readObject();
             if (obj instanceof Message) {
                 Message m = (Message) obj;
+                if ("SENSITIVE".equalsIgnoreCase(m.type)) {
+                    if (m.token == null || !AuthService.validateToken(m.token, m.from)) {
+                        System.err.println("Rejected SENSITIVE message from " + m.from + " (invalid token)");
+                        return;
+                    }
+                }
                 System.out.println("TCP Received: " + m);
             }
         } catch (Exception e) {
