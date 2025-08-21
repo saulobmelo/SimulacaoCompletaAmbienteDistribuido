@@ -1,32 +1,27 @@
 package net;
 
 import common.Message;
-import common.AuthService;
 
 import java.io.*;
 import java.net.*;
 
 public class TcpServer implements Runnable {
-    private final int port;
-    private volatile boolean running = true;
-    public TcpServer(int port) { this.port = port; }
+    private final int porta;
+    private volatile boolean executando = true;
+    public TcpServer(int porta) { this.porta = porta; }
 
-    public void stop() { running = false; }
+    public void stop() { executando = false; }
 
     @Override
     public void run() {
-        try (ServerSocket server = new ServerSocket(port)) {
-            System.out.println("TCP server listening on " + port);
-            while (running) {
-                try {
-                    Socket s = server.accept();
-                    new Thread(() -> handleClient(s)).start();
-                } catch (IOException e) {
-                    if (running) System.err.println("accept error: " + e.getMessage());
-                }
+        try (ServerSocket servidor = new ServerSocket(porta)) {
+            System.out.println("TCP Servidor escutando na porta " + porta);
+            while (executando) {
+                Socket s = servidor.accept();
+                new Thread(() -> handleClient(s)).start();
             }
         } catch (IOException e) {
-            System.err.println("TcpServer error: " + e.getMessage());
+            System.err.println("TcpServer erro: " + e.getMessage());
         }
     }
 
@@ -35,16 +30,10 @@ public class TcpServer implements Runnable {
             Object obj = in.readObject();
             if (obj instanceof Message) {
                 Message m = (Message) obj;
-                if ("SENSITIVE".equalsIgnoreCase(m.type)) {
-                    if (m.token == null || !AuthService.validateToken(m.token, m.from)) {
-                        System.err.println("Rejected SENSITIVE message from " + m.from + " (invalid token)");
-                        return;
-                    }
-                }
-                System.out.println("TCP Received: " + m);
+                System.out.println("Mensagem recebida via TCP: " + m);
             }
         } catch (Exception e) {
-            System.err.println("handleClient error: " + e.getMessage());
+            System.err.println("handleClient erro: " + e.getMessage());
         } finally {
             try { s.close(); } catch (IOException ignored) {}
         }

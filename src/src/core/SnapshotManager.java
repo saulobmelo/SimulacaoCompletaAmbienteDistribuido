@@ -9,10 +9,10 @@ public class SnapshotManager {
         this.nodeId = nodeId;
     }
 
-    public void receiveMarker(String snapshotId, String from) {
-        System.out.println(nodeId + " received marker " + snapshotId + " from " + from);
-        // if first marker -> record local state, send markers to outgoing channels
-        // otherwise record channel state until marker received on that channel
+    public void receiveMarker(String snapshotId, String origem) {
+        System.out.println(nodeId + " recebeu marcador " + snapshotId + " origem " + origem);
+        // if first marker -> record local estado, enviar markers destino outgoing channels
+        // otherwise record channel estado until marker received on that channel
     }
 
     public Map<String,Object> getLocalState() {

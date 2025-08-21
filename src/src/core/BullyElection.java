@@ -4,21 +4,34 @@ import java.util.*;
 
 public class BullyElection {
     private final String myId;
-    private final List<String> higherPeers; // higher priority peers (IDs greater than me)
+    private final List<String> higherPars; // pares with higher priority
 
-    public BullyElection(String myId, List<String> higherPeers) {
-        this.myId = myId; this.higherPeers = higherPeers;
+    public BullyElection(String myId, List<String> higherPars) {
+        this.myId = myId; this.higherPars = higherPars;
     }
 
     public String startElection() {
-        // Simplified: if any higher peer responds (assume alive), it wins; else I win
-        for (String p : higherPeers) {
-            // In a real impl, send ELECTION message and wait for OK
-            // Here we sort and pick the lexicographically max as winner
+        System.out.println(myId + " iniciou eleição Bully");
+        boolean gotAnswer = false;
+        for (String p : higherPars) {
+            boolean responded = sendElectionMessage(p);
+            if (responded) {
+                gotAnswer = true;
+                // wait for coordenador mensagem
+            }
         }
-        List<String> all = new ArrayList<>(higherPeers);
-        all.add(myId);
-        all.sort(Comparator.naturalOrder());
-        return all.get(all.size()-1);
+        if (!gotAnswer) {
+            // become lider
+            System.out.println(myId + " becomes lider (Bully)");
+            return myId;
+        } else {
+            // someone else will coordinate; wait
+            return null;
+        }
+    }
+
+    private boolean sendElectionMessage(String peer) {
+        // implement RPC/TCP call destino peer
+        return false;
     }
 }

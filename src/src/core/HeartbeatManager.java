@@ -2,57 +2,45 @@ package core;
 
 import java.util.*;
 import java.util.concurrent.*;
-import java.rmi.Naming;
-import rmi.RemoteNode;
 
 public class HeartbeatManager {
-    private final Map<String,Integer> misses = new ConcurrentHashMap<>();
+    private final Map<String,Integer> falhas = new ConcurrentHashMap<>();
     private final ScheduledExecutorService sched = Executors.newScheduledThreadPool(1);
     private final int threshold = 3;
-    private final List<String> peers;
-    private final String group; // "A" (gRPC) or "B" (RMI)
+    private final List<String> pares;
 
-    public HeartbeatManager(String group, List<String> peers) {
-        this.group = group;
-        this.peers = peers;
+    public HeartbeatManager(List<String> pares) {
+        this.pares = pares;
     }
 
     public void start() {
-        sched.scheduleAtFixedRate(() -> {
-            for (String p : peers) {
-                boolean ok = pingPeer(p);
-                if (!ok) {
-                    int c = misses.merge(p, 1, Integer::sum);
-                    System.err.println("Heartbeat miss from " + p + " (" + c + ")");
-                    if (c >= threshold) {
-                        substitutePeer(p);
-                        misses.put(p, 0);
-                    }
-                } else {
-                    misses.put(p, 0);
-                }
-            }
-        }, 0, 2, java.util.concurrent.TimeUnit.SECONDS);
+        sched.scheduleAtFixedRate(this::sendAndCheck, 0, 1, TimeUnit.SECONDS);
     }
 
-    private boolean pingPeer(String peer) {
-        try {
-            if ("B".equalsIgnoreCase(group)) {
-                RemoteNode stub = (RemoteNode) Naming.lookup("//localhost/" + peer);
-                return stub.heartbeat();
+    private void sendAndCheck() {
+        for (String peer : pares) {
+            boolean ok = pingPar(peer);
+            if (!ok) {
+                falhas.put(peer, falhas.getOrDefault(peer,0)+1);
+                if (falhas.get(peer) >= threshold) {
+                    System.out.println("Par " + peer + " considerado inativo -> substituindo (simulado).");
+                    falhas.remove(peer);
+                    substitutePar(peer);
+                }
             } else {
-                // gRPC placeholder: call GrpcNodeClient.heartbeat(peer)
-                // return GrpcNodeClient.heartbeat(peer);
-                return true; // until gRPC client is wired
+                falhas.remove(peer);
             }
-        } catch (Exception e) {
-            return false;
         }
     }
 
-    private void substitutePeer(String peer) {
-        System.out.println("Simulating replacement for " + peer);
-        // Implementar substituição: ex. registrar novo nó/ID e anunciar via multicast
+    private boolean pingPar(String peer) {
+        // Simplificação: aqui se chamaria RMI/gRPC/TCP heartbeat. Retornamos true por padrão.
+        return true;
+    }
+
+    private void substitutePar(String peer) {
+        System.out.println("Simulando substituição para " + peer);
+        // Implementar recriação de nó simulada (ex.: instanciar NóReplacement)
     }
 
     public void stop() { sched.shutdownNow(); }

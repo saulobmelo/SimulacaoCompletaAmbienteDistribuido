@@ -3,16 +3,16 @@ package net;
 import java.net.*;
 
 public class MulticastSender {
-    private final InetAddress group;
-    private final int port;
-    public MulticastSender(String groupAddr, int port) throws Exception {
-        this.group = InetAddress.getByName(groupAddr); this.port = port;
+    private final InetAddress grupo;
+    private final int porta;
+    public MulticastSender(String groupAddr, int porta) throws Exception {
+        this.grupo = InetAddress.getByName(groupAddr); this.porta = porta;
     }
 
     public void send(String msg) throws Exception {
         try (DatagramSocket ds = new DatagramSocket()) {
             byte[] data = msg.getBytes();
-            DatagramPacket p = new DatagramPacket(data, data.length, group, port);
+            DatagramPacket p = new DatagramPacket(data, data.length, grupo, porta);
             ds.send(p);
         }
     }

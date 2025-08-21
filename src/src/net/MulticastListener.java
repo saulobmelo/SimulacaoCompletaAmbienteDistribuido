@@ -1,39 +1,32 @@
 package net;
 
-import core.SnapshotManager;
-
 import java.net.*;
-import java.nio.charset.StandardCharsets;
 
 public class MulticastListener implements Runnable {
-    private final InetAddress group;
-    private final int port;
-    private final SnapshotManager snapshot;
-    private volatile boolean running = true;
+    private final InetAddress grupo;
+    private final int porta;
+    private volatile boolean executando = true;
 
-    public MulticastListener(String groupAddr, int port, SnapshotManager snapshot) throws Exception {
-        this.group = InetAddress.getByName(groupAddr); this.port = port; this.snapshot = snapshot;
+    public MulticastListener(String groupAddr, int porta) throws Exception {
+        this.grupo = InetAddress.getByName(groupAddr); this.porta = porta;
     }
 
-    public void stop() { running = false; }
+    public void stop() { executando = false; }
 
     @Override
     public void run() {
-        try (MulticastSocket socket = new MulticastSocket(port)) {
-            socket.joinGroup(group);
-            System.out.println("Multicast listening on " + group + ":" + port);
-            byte[] buf = new byte[512];
-            while (running) {
-                DatagramPacket packet = new DatagramPacket(buf, buf.length);
-                socket.receive(packet);
-                String msg = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8);
-                if (msg.startsWith("MARKER|SNAP|")) {
-                    String snapId = msg.substring("MARKER|SNAP|".length());
-                    snapshot.receiveMarker(snapId, packet.getAddress().toString());
-                }
+        try (MulticastSocket ms = new MulticastSocket(porta)) {
+            ms.joinGroup(grupo);
+            byte[] buf = new byte[1024];
+            while (executando) {
+                DatagramPacket p = new DatagramPacket(buf, buf.length);
+                ms.receive(p);
+                String msg = new String(p.getData(), 0, p.getLength());
+                System.out.println("Mensagem multicast recebida: " + msg);
             }
+            ms.leaveGroup(grupo);
         } catch (Exception e) {
-            if (running) System.err.println("MulticastListener error: " + e.getMessage());
+            System.err.println("MulticastListener erro: " + e.getMessage());
         }
     }
 }

@@ -1,23 +1,23 @@
 package common;
 
 public class LamportClock {
-    private int time = 0;
+    private int tempo = 0;
 
     public synchronized int tick() {
-        time++;
-        return time;
+        tempo++;
+        return tempo;
     }
 
     public synchronized int updateOnReceive(int received) {
-        time = Math.max(time, received) + 1;
-        return time;
+        tempo = Math.max(tempo, received) + 1;
+        return tempo;
     }
 
     public synchronized int getTime() {
-        return time;
+        return tempo;
     }
 
     public synchronized void setTime(int t) {
-        this.time = t;
+        this.tempo = t;
     }
 }
