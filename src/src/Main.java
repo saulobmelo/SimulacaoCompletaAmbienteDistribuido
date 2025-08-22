@@ -11,7 +11,6 @@ import java.util.Arrays;
 public class Main {
     public static void main(String[] args) throws Exception {
         // args: nodeId grupo porta listaPares
-        // Exemplo: A1 A 5001 A2:5002,A3:5003
         String nodeId = args.length > 0 ? args[0] : "A1";
         String grupo = args.length > 1 ? args[1] : "A";
         int tcpPort = args.length > 2 ? Integer.parseInt(args[2]) : 5000;
